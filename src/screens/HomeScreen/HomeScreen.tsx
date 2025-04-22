@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   FlatList,
   TouchableOpacity,
+  TextInput,
 } from 'react-native';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../navigation/StackParamList';
@@ -19,25 +20,45 @@ const HomeScreen = (props: Props) => {
   const {navigation} = props;
   const dispatch = useDispatch();
   const {posts, loading} = useSelector((state: any) => state.data);
+  const [data, setData] = useState<Post[]>([]);
 
   useEffect(() => {
     dispatch(getPostsFetch());
   }, [dispatch]);
 
+  useEffect(() => {
+    setData(posts);
+  }, [posts]);
+
   const handlerNavigateDetail = useCallback(
-    (data: Post) => {
-      navigation.navigate('Detail', { data });
+    (dataDetail: Post) => {
+      navigation.navigate('Detail', {data: dataDetail});
     },
     [navigation],
   );
 
+  const handlerSearch = useCallback(
+    (text: string) => {
+      const filtered = posts.filter((val: Post) =>
+        val?.title.toLowerCase().includes(text.toLowerCase()),
+      );
+      setData(filtered);
+    },
+    [posts],
+  );
+
   return (
     <View style={styles.container}>
+      <TextInput
+        style={styles.input}
+        onChangeText={text => handlerSearch(text)}
+        placeholder="Search"
+      />
       {loading ? (
         <ActivityIndicator size={'large'} />
       ) : (
         <FlatList
-          data={posts}
+          data={data}
           renderItem={({item}) => (
             <TouchableOpacity
               style={styles.containerField}
@@ -46,7 +67,7 @@ const HomeScreen = (props: Props) => {
               <Text>{item?.title}</Text>
             </TouchableOpacity>
           )}
-          keyExtractor={item => item.id}
+          keyExtractor={item => item.id.toString()}
         />
       )}
     </View>
@@ -66,6 +87,12 @@ const styles = StyleSheet.create({
   titleId: {
     marginRight: 8,
     fontWeight: 'bold',
+  },
+  input: {
+    height: 40,
+    margin: 12,
+    borderWidth: 1,
+    padding: 10,
   },
 });
 
